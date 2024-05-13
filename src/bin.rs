@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use clap::{App, AppSettings, Arg};
 use num_cpus;
 use rayon::prelude::*;
-use wireguard_vanity_lib::{measure_rate, search_for_prefix};
+use wireguard_vanity_lib::{measure_rate, search_for_prefixes};
 use x25519_dalek::{PublicKey, StaticSecret};
 
 fn format_time(t: f64) -> String {
@@ -75,18 +75,20 @@ fn main() -> Result<(), Box<dyn Error>> {
         .author("Brian Warner <warner@lothar.com>")
         .about("finds Wireguard keypairs with a given string prefix")
         .arg(
-            Arg::with_name("NAME")
+            Arg::with_name("PREFIX")
                 .required(true)
-                .help("string to find near the start of the pubkey"),
+                .multiple(true)
+                .help("A prefix to search for - multiple can be specified at once"),
         )
         .get_matches();
-    let prefix = matches.value_of("NAME").unwrap();
+    let prefixes = matches.values_of("PREFIX").unwrap().collect::<Vec<_>>();
 
-    let trials_per_key = 64u64.pow(prefix.len() as u32);
+    let max_prefix_len = prefixes.iter().map(|prefix| prefix.len()).max().expect("prefixes is not empty");
+    let trials_per_key = 64u64.pow(max_prefix_len as u32);
 
     eprintln!(
-        "searching for '{}', one of every {} keys should match",
-        &prefix, trials_per_key
+        "searching - for the longest prefix, one of every {} keys should match",
+        trials_per_key
     );
 
     // get_physical() appears to be more accurate: hyperthreading doesn't
@@ -102,7 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let total_rate = raw_rate * (num_cpus::get_physical() as f64) / (trials_per_key as f64);
         let seconds_per_key = 1.0 / total_rate;
         eprintln!(
-            "est yield: {} per key, {}",
+            "est yield: {} per key, {} (for the longest prefix)",
             format_time(seconds_per_key),
             format_rate(total_rate)
         );
@@ -113,7 +115,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // 1M trials takes about 10s on my laptop, so let it run for 1000s
     (0..100_000_000)
         .into_par_iter()
-        .map(|_| search_for_prefix(&prefix))
+        .map(|_| search_for_prefixes(prefixes.as_slice()))
         .try_for_each(print)?;
     Ok(())
 }

@@ -375,29 +375,17 @@ impl Iterator for ScanProgress {
     }
 }
 
-pub fn make_check_predicate(
-    prefix: &str,
-) -> impl Fn(&EdwardsPoint) -> bool {
-    let prefix = String::from(prefix);
-    move |point| {
-        let public_b64 = base64::encode(point.to_montgomery().as_bytes());
-        public_b64.starts_with(&prefix)
-    }
+pub fn check_prefixes(
+    prefixes: &[&str],
+    point: &EdwardsPoint
+) -> bool {
+    let public_b64 = base64::encode(point.to_montgomery().as_bytes());
+    prefixes.iter().any(|prefix| public_b64.starts_with(prefix))
 }
 
-pub fn search<T>(check: T) -> (StaticSecret, PublicKey)
-where
-    T: Fn(&EdwardsPoint) -> bool,
-{
+pub fn search_for_prefixes(prefixes: &[&str]) -> (StaticSecret, PublicKey) {
     let seed = Seed::generate();
-    let both = seed.scan().find(|(_, point)| check(&point)).unwrap();
-    seed.convert_both(both)
-}
-
-pub fn search_for_prefix(prefix: &str) -> (StaticSecret, PublicKey) {
-    let check = make_check_predicate(prefix);
-    let seed = Seed::generate();
-    let both = seed.scan().find(|(_, point)| check(&point)).unwrap();
+    let both = seed.scan().find(|(_, point)| check_prefixes(prefixes, &point)).unwrap();
     seed.convert_both(both)
 }
 
@@ -405,13 +393,13 @@ pub fn search_for_prefix(prefix: &str) -> (StaticSecret, PublicKey) {
 pub fn measure_rate() -> f64 {
     use ScanResults::*;
     // prefix with characters that will never match
-    let check = make_check_predicate("****");
+    let prefixes = vec!["****"];
     Seed::generate()
         .scan_progress()
         .map(|res| {
             // timing includes the work of checking the pubkey
             if let Trial(_count, point) = res {
-                check(&point);
+                check_prefixes(prefixes.as_slice(), &point);
             };
             res
         })
@@ -425,8 +413,8 @@ mod test {
 
     #[test]
     fn test_search() {
-        let check = make_check_predicate("aaa");
-        let (privkey, pubkey) = search(check);
+        let prefixes = vec!["aaa"];
+        let (privkey, pubkey) = search_for_prefixes(prefixes.as_slice());
         println!(
             "priv: {}, pub: {}",
             base64::encode(&privkey.to_bytes()),
