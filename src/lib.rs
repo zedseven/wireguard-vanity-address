@@ -377,16 +377,11 @@ impl Iterator for ScanProgress {
 
 pub fn make_check_predicate(
     prefix: &str,
-    start: usize,
-    end: usize,
 ) -> impl Fn(&EdwardsPoint) -> bool {
     let prefix = String::from(prefix);
     move |point| {
         let public_b64 = base64::encode(point.to_montgomery().as_bytes());
-        //println!("trial: {}", public_b64);
-        public_b64[start..end]
-            .to_ascii_lowercase()
-            .contains(&prefix)
+        public_b64.starts_with(&prefix)
     }
 }
 
@@ -399,8 +394,8 @@ where
     seed.convert_both(both)
 }
 
-pub fn search_for_prefix(prefix: &str, start: usize, end: usize) -> (StaticSecret, PublicKey) {
-    let check = make_check_predicate(prefix, start, end);
+pub fn search_for_prefix(prefix: &str) -> (StaticSecret, PublicKey) {
+    let check = make_check_predicate(prefix);
     let seed = Seed::generate();
     let both = seed.scan().find(|(_, point)| check(&point)).unwrap();
     seed.convert_both(both)
@@ -410,7 +405,7 @@ pub fn search_for_prefix(prefix: &str, start: usize, end: usize) -> (StaticSecre
 pub fn measure_rate() -> f64 {
     use ScanResults::*;
     // prefix with characters that will never match
-    let check = make_check_predicate("****", 0, 10);
+    let check = make_check_predicate("****");
     Seed::generate()
         .scan_progress()
         .map(|res| {
@@ -430,7 +425,7 @@ mod test {
 
     #[test]
     fn test_search() {
-        let check = make_check_predicate("aaa", 0, 10);
+        let check = make_check_predicate("aaa");
         let (privkey, pubkey) = search(check);
         println!(
             "priv: {}, pub: {}",

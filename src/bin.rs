@@ -75,48 +75,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         .author("Brian Warner <warner@lothar.com>")
         .about("finds Wireguard keypairs with a given string prefix")
         .arg(
-            Arg::with_name("RANGE")
-                .long("in")
-                .takes_value(true)
-                .help("NAME must be found within first RANGE chars of pubkey (default: 10)"),
-        )
-        .arg(
             Arg::with_name("NAME")
                 .required(true)
                 .help("string to find near the start of the pubkey"),
         )
         .get_matches();
-    let prefix = matches.value_of("NAME").unwrap().to_ascii_lowercase();
-    let len = prefix.len();
-    let end: usize = 44.min(match matches.value_of("RANGE") {
-        Some(range) => range.parse()?,
-        None => {
-            if len <= 10 {
-                10
-            } else {
-                len + 10
-            }
-        }
-    });
-    if end < len {
-        return Err(ParseError(format!("range {} is too short for len={}", end, len)).into());
-    }
+    let prefix = matches.value_of("NAME").unwrap();
 
-    let offsets: u64 = 44.min((1 + end - len) as u64);
-    // todo: this is an approximation, offsets=2 != double the chances
-    let mut num = offsets;
-    let mut denom = 1u64;
-    prefix.chars().for_each(|c| {
-        if c.is_ascii_alphabetic() {
-            num *= 2; // letters can match both uppercase and lowercase
-        }
-        denom *= 64; // base64
-    });
-    let trials_per_key = denom / num;
+    let trials_per_key = 64u64.pow(prefix.len() as u32);
 
     eprintln!(
-        "searching for '{}' in pubkey[0..{}], one of every {} keys should match",
-        &prefix, end, trials_per_key
+        "searching for '{}', one of every {} keys should match",
+        &prefix, trials_per_key
     );
 
     // get_physical() appears to be more accurate: hyperthreading doesn't
@@ -143,7 +113,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // 1M trials takes about 10s on my laptop, so let it run for 1000s
     (0..100_000_000)
         .into_par_iter()
-        .map(|_| search_for_prefix(&prefix, 0, end))
+        .map(|_| search_for_prefix(&prefix))
         .try_for_each(print)?;
     Ok(())
 }
