@@ -75,12 +75,20 @@ fn main() -> Result<(), Box<dyn Error>> {
         .author("Brian Warner <warner@lothar.com>")
         .about("finds Wireguard keypairs with a given string prefix")
         .arg(
+            Arg::with_name("ITERATIONS")
+                .long("iterations")
+                .takes_value(true)
+                .default_value("100000000")
+                .help("The number of iterations to run before exiting"),
+        )
+        .arg(
             Arg::with_name("PREFIX")
                 .required(true)
                 .multiple(true)
                 .help("A prefix to search for - multiple can be specified at once"),
         )
         .get_matches();
+    let iterations = matches.value_of("ITERATIONS").unwrap().parse::<u64>().expect("iterations is an unsigned integer");
     let prefixes = matches.values_of("PREFIX").unwrap().collect::<Vec<_>>();
 
     let max_prefix_len = prefixes.iter().map(|prefix| prefix.len()).max().expect("prefixes is not empty");
@@ -113,7 +121,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     eprintln!("hit Ctrl-C to stop");
 
     // 1M trials takes about 10s on my laptop, so let it run for 1000s
-    (0..100_000_000)
+    (0..iterations)
         .into_par_iter()
         .map(|_| search_for_prefixes(prefixes.as_slice()))
         .try_for_each(print)?;
