@@ -114,7 +114,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
     let trials_per_key = denom / num;
 
-    println!(
+    eprintln!(
         "searching for '{}' in pubkey[0..{}], one of every {} keys should match",
         &prefix, end, trials_per_key
     );
@@ -124,21 +124,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if trials_per_key < 2u64.pow(32) {
         let raw_rate = measure_rate();
-        println!(
+        eprintln!(
             "one core runs at {}, CPU cores available: {}",
             format_rate(raw_rate),
             num_cpus::get_physical(),
         );
         let total_rate = raw_rate * (num_cpus::get_physical() as f64) / (trials_per_key as f64);
         let seconds_per_key = 1.0 / total_rate;
-        println!(
+        eprintln!(
             "est yield: {} per key, {}",
             format_time(seconds_per_key),
             format_rate(total_rate)
         );
     }
 
-    println!("hit Ctrl-C to stop");
+    eprintln!("hit Ctrl-C to stop");
 
     // 1M trials takes about 10s on my laptop, so let it run for 1000s
     (0..100_000_000)
