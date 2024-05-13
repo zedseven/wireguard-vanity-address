@@ -25,41 +25,48 @@ Generate Wireguard keypairs with a given prefix string.
 [iim-open-image]: http://isitmaintained.com/badge/open/warner/wireguard-vanity-address.svg
 [iim-open-url]: http://isitmaintained.com/project/warner/wireguard-vanity-address
 
+**This is a fork of https://github.com/warner/wireguard-vanity-address.**
+
+The main differences are as follows:
+- Case-sensitive searching;
+- Searching multiple prefixes at once;
+- Printing the informational header to `stderr`, allowing the program output to be comfortably redirected to a file;
+- Customisable iteration count
+
 The [Wireguard VPN](https://www.wireguard.com/) uses Curve25519 keypairs, and
 displays the Base64-encoded public key in status displays. I found it hard to
 remember which key goes with which target, and the config file doesn't really
 support comments or attaching human-memorable names to those keys.
 
 So this tool lets you generate a few million keypairs and print out just the
-ones with a given string in the first few (10) letters, using a
-case-insensitive search to increase your chances.
+ones with a given string as a prefix.
 
 ## Usage
 
 ```
 $ cargo install wireguard-vanity-address
-$ wireguard-vanity-address dave
+$ wireguard-vanity-address DAVE KATE
 
-searching for 'dave' in pubkey[0..10], one of every 149796 keys should match
-one trial takes 17.9 us, CPU cores available: 4
-est yield: 671.4 ms per key, 1.49 keys/s
+searching - for the longest prefix, one of every 16777216 keys should match
+one core runs at 2.03e6 keys/s, CPU cores available: 16
+est yield: 517.7 ms per key, 1.93 keys/s (for the longest prefix)
 hit Ctrl-C to stop
-private cG8SfQGIK4dKZcjtFaVZT3ws7rFfwaaicborQz0IBWA=  public E6cRdAve5NmLpoH1nXjJqcVJRz9sM7cbeK4xaxYsH3o=
-private OEkbz37Ztn3Y8R1cfPRHiB9wTA6av/NRzGUuO4hxAnE=  public 0Vr/JZDAve8q+kmNVmiw4KdKiXc//M0EGOY6K9C11nw=
-private 8GBLlDECKxTk7VeZ4Mn9zQxUR+lyBzsijczQr6RjE2Y=  public QU8cNLDaVeoqLsyzKx9pFnSN4GNQMkG16TnS4e0XwFU=
-private +KmScBxM3iAfIGkqwNYmngRqDq7I1T/P7tH4SNcnqXY=  public 0VvjqadaVeruKrpTc67tuqs2fi3qcP800u5RF3G9fz8=
-private gHM5OIUCcecxJg/LIvCGTiMz6UzvZ0Q3V0QW7ngj3FI=  public gjEILdAvEfvG9Ncr14NqeRQrmT5ZJBIrbS+6FsOBiEM=
-private QGeuFWwFsCsVrVd39Yp1ItnUicyjwgkjZpvY9npE5F4=  public 6IxmSDave735au9+saEYiB+azvSBIHWfnqCWa9tI5CU=
-private OHIZd5auDHQzMFC+r3fp2pF4sstg5SQJjd9bG+QldUo=  public DAVemWOQZBonokPo7H1jiM61STpRUNYv0N0q27Uztgg=
-private UDXTYKg2yL/fjc/ces3QVorAKZnHCJm2NBTP6h9bU2Q=  public UBWDAvEwBARXYvkwsUwFVwgFoV230/0Eir+xFWR6kGU=
-private EJN1n9o3ilXW7yBPt49vNJe00NK2w6TABETX0z/o124=  public SSDAvEjMO/FpizG3/8rYqDYKFfX7no8ydi+tRrHM9ls=
-private KBnvZZ/2T+NkWzI/FODyU5P6DpA7vC/kO9d0ZiMODlE=  public 5OWaDAVEf1xzoiUomAdyCe4MI0x/XjXciqcm7rinhnQ=
-private SKE/SnG41wDgDBlEuqRpYd2UnXDph1+6cvENDd/W00o=  public XU0daveTtUZAxFpfPSrfZqp+Yv/EqXGuoSOS15iUUh8=
-private eHa22XAJYBj6PxhSkeI5BO71j3/CC9yLeM8zKyzdUV0=  public XDaVEaxYDwPmcAMGlP8CzMEnGC7oSGW3AURF5anC5gA=
-private 6Ojic3AYJFgCBIAwExBY74kOKLciJWRkXB17jTfvuWk=  public LdaVewaFPZFHV+5SGNwNdAUJjyVVyprVQs/fDuE5SR8=
-private +Hw5k1ABvrYJRoRwGizFhwP5sJcowv4pTii/V7dJ4lA=  public HVyDAvEia/j/pBMx/1mxdsCDprAjZf1U3K0Fn9zEfVk=
-private wNVk0Y2LDEmpcNyBIOtmco87v+9hdquSKFnOYyyfY2Y=  public kdavEA7x1CduyJ9+WpfDF5QG1ZSOI4NiduVBTAniB0Y=
-private kPCNY3QiCsOLakmh8CPsu6QPMW3MtkFwKP+HKDsOpnA=  public daVE11aF7bx40NqwQqV14hxydDwiv4rC0JPhEVxAKnM=
+private GFMjZuaB4Eneqnf4Pf8SID5YZveUVQPg37BiYqGpfW8=  public KATEN7mzdqR4WT6NjxYhzergAZjNwVKSvvItkIjLeis=
+private qGO+MY4WfuJNnK6SQmodbkACxfa9IG4MB0m7BIQ0hEA=  public DAVEIeuq8h8qNy39SBrkgCTPmOMZ1+HSLtDfhlhVq0A=
+private yBqHMXe/JbCsX9cF0hxp5Fj2U3hswHJEMblJLhtNlHw=  public KATE5s0e6kHk8LJKbOL8i9B6HWlpXnYwZ7UEQAzMXCg=
+private oN7Kg1rvgzxBKhFP0Loh9tArxLaUtLDl6jeW2eH3a3o=  public DAVEgG29ryNiWesHqS22/PFiO1+eFXMgY1In1rkJgTU=
+private AKT4BhIoVYjjPL07pfHiON6BJGRMj2VGM0yFGYTjS2M=  public KATESHF9AnjN1lToKrd6HFLDYWt0kUjH2UTKf5G53QE=
+private eClZ1mHBOz3yHgrb1gsJBOEOSEGgMl8utIqXFRS700Y=  public KATEWKDFh8/FahbN971PWwK5zVwIY9ArY9puyQJZ1X0=
+private kKUujUdp0lL6iwFtzNZNewL5S8vzrHQC7kOMGfve8EM=  public KATEa/dM8KoHgFnZ7t8C3IMZwgznP0FTI8vYThNE+g8=
+private 2Ctrd6tLzJnHpW7b+BYDz5d5r8oYsaqMl37j7/zVxFc=  public DAVEjRuojsTDAGMiSkuC2mZAA8gOh9X295NU9ZDeYQw=
+private kAD6fc7SS6G3OWAK2FugQs/u/Dofdc6FeDCZJwGC8m0=  public DAVEnskjb+qZmFY4qDSFvJoJRRtdhNvyIMfQouFs1hY=
+private aNnkTq658aOneX1xbvBY0XMKSZNA52zOAGCD1lH/F1o=  public KATEwjfiGQJSXfejTsJY9jfnaD0+tsoxN86WLtl4cD0=
+private iOpDak87U5YUpkT73aHYGFXzOLgtiMgrgXw+bwvnE2I=  public KATEmEB09faUkjyYPbCxDpLWT0xoxU7CtBjpqHJk9mU=
+private uHzsiRTT6oVmvwFSmbX5k7XNTPtKXhSlmQ+yurEY2mw=  public DAVEBtnqQCIMAwzVxEXx64WBAvWSJ02OkljxaBkFkTs=
+private yEwo8zz62a0IaSQvDvZ4/pqiIGdmBpy28fBYJKcbsU8=  public KATEmY79sjAUTdqZez8R0JnQtdH5IcEtmECfuo25LSc=
+private mMgRuu9hKqygkXAxwhcQu2uCUIj1UKL8UGjM939Tw1E=  public DAVEz2gGSWGD6Ynrq2+qK7qJCJRBm6ktpPLlaCS7FWo=
+private eFIJkn4/qYhqrDwxFQ6FJ+nI0IBMLLuRIU0dU4Ih3m4=  public DAVE1IqwP2TqLu6RN3uVHs964WaHZk52cgCb9qXT7RE=
+private 6NE7CKGGqpjPkbcIBfzj9FPa8q1yPY9zaw3cQi8183s=  public DAVEZfl7Hxj9Gwq3ky/Fl72mLFLyg1xl58UgFY2AQ2U=
 ...
 ```
 
